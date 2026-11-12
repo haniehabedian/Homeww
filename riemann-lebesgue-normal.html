@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<title>Riemann, Lebesgue and the Normal CDF</title>
+<style>
+
+  :root { --g900:#0b3d2e; --g700:#12805c; --g500:#22b07d; --g300:#8fdcb8; --g100:#e3f6ec; --g50:#f2fbf6; --ink:#12302a; --mut:#5b7a6f; --acc:#f08a24; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; background: linear-gradient(180deg, var(--g100) 0, var(--g50) 340px, #f7fcf9 100%); color: var(--ink); margin: 0; padding: 18px 14px 60px; line-height: 1.6; }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; font-weight: 700; color: #fff; background: linear-gradient(120deg, var(--g900), var(--g700) 60%, var(--g500)); padding: 22px 22px; margin: 8px 0 12px; line-height: 1.3; border-radius: 16px; box-shadow: 0 6px 18px rgba(18,128,92,.25); }
+  .sub { color: var(--mut); font-size: 0.92rem; margin: 0 0 8px; }
+  .box { border: 1px solid var(--g300); border-top: 5px solid var(--g500); background: #fff; padding: 18px; margin: 22px 0; border-radius: 14px; box-shadow: 0 4px 14px rgba(18,128,92,.08); }
+  .box:nth-of-type(even) { border-top-color: var(--g700); }
+  .box h2 { font-size: 1.15rem; font-weight: 600; color: var(--g700); padding-bottom: 8px; margin: 0 0 14px; border-bottom: 2px dashed var(--g300); }
+  h3 { font-size: 0.98rem; font-weight: 600; color: var(--g900); margin: 20px 0 8px; }
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--g700); margin: 14px 0 5px; }
+  select, input { width: 100%; border: 1.5px solid var(--g300); padding: 10px 12px; font-family: inherit; font-size: 0.92rem; background: var(--g50); color: var(--ink); border-radius: 10px; }
+  select:focus, input:focus { outline: none; border-color: var(--g500); box-shadow: 0 0 0 3px rgba(34,176,125,.2); }
+  button { background: linear-gradient(120deg, var(--g700), var(--g500)); color: #fff; border: none; padding: 11px 20px; font-family: inherit; font-weight: 600; font-size: 0.88rem; cursor: pointer; border-radius: 999px; box-shadow: 0 3px 8px rgba(18,128,92,.3); }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { background: #9bb8ac; box-shadow: none; cursor: wait; }
+  button.small { background: var(--g100); color: var(--g700); padding: 5px 14px; margin: 2px 4px 2px 0; box-shadow: none; border: 1px solid var(--g300); }
+  button.small:hover { background: var(--g300); }
+  .row { margin-top: 18px; }
+  canvas { display: block; width: 100%; border: 1px solid var(--g300); background: var(--g50); border-radius: 10px; }
+  .cap { color: var(--mut); font-size: 0.8rem; margin: 6px 0 0; }
+  pre.report { border: 1px solid var(--g300); border-left: 5px solid var(--g500); padding: 12px; white-space: pre-wrap; word-break: break-word; font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace; font-size: 0.78rem; line-height: 1.55; margin: 8px 0 0; background: var(--g50); border-radius: 10px; }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.8rem; margin: 10px 0; border: 1px solid var(--g300); border-radius: 10px; overflow: hidden; }
+  th, td { border-bottom: 1px solid var(--g100); padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: var(--g700); color: #fff; font-weight: 600; }
+  tr:nth-child(even) td { background: var(--g50); }
+  .wrap { overflow-x: auto; }
+  p, li { font-size: 0.93rem; }
+  strong { color: var(--g700); }
+  ul { padding-left: 20px; }
+  .eq { background: var(--g50); border-left: 4px solid var(--g500); border-radius: 8px; padding: 8px 14px; margin: 8px 0; font-size: 0.95rem; overflow-x: auto; }
+  .ov { text-decoration: overline; font-style: italic; }
+  pre.code { background: var(--g900); color: #d9f7e8; border-radius: 12px; padding: 14px 16px; font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace; font-size: 0.8rem; line-height: 1.55; overflow-x: auto; margin: 10px 0; }
+  pre.code b { color: #ffd479; font-weight: 600; }
+  .two { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  @media (min-width: 760px) { .two { grid-template-columns: 1fr 1fr; gap: 16px; } }
+  .wrap td, .wrap th { white-space: nowrap; }
+  ol { padding-left: 22px; }
+  ol li { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Riemann and Lebesgue Integration, and the Normal CDF</h1>
+<p class="sub">Exercise 1: numerical integration by partitioning the domain (Riemann) and the range (Lebesgue). Exercise 2: numerical computation of the standard normal CDF.</p>
+
+<!-- ===================== EXERCISE 1 ===================== -->
+<section class="box">
+  <h2>Exercise 1. Riemann and Lebesgue integration</h2>
+
+  <h3>The two approaches</h3>
+  <p><strong>Riemann.</strong> The interval [a, b] is split into n equal pieces. On each piece the function is replaced by its value at the midpoint, and the heights are added: R<sub>n</sub> = &Sigma; f(x<sub>i</sub>) &middot; (b &minus; a)/n. The midpoint is used because it also works for 1/&radic;x, which is infinite at 0.</p>
+  <p><strong>Lebesgue.</strong> The range of f is split into k levels y<sub>0</sub> &lt; y<sub>1</sub> &lt; &hellip; &lt; y<sub>k</sub>. For each level we look at the preimage E<sub>j</sub> = {x : y<sub>j</sub> &le; f(x) &lt; y<sub>j+1</sub>} and add L<sub>k</sub> = &Sigma; y<sub>j</sub> &middot; &mu;(E<sub>j</sub>), where &mu; is the length. This is the integral of a simple function that lies below f, so L<sub>k</sub> is always a lower bound. The levels are equally spaced between the minimum and the maximum of f. For 1/&radic;x, which has no maximum, the top level is cut at &radic;k.</p>
+  <p>The new difficulty is the length &mu;(E<sub>j</sub>). I used two ways to get it:</p>
+  <ul>
+    <li><strong>Exact preimage.</strong> We write G(y) = &mu;{f &ge; y}, which can be computed for these functions (for example G(y) = 1 &minus; &radic;y for x&sup2;, and for sin(x)/x by bisection). Then &mu;(E<sub>j</sub>) = G(y<sub>j</sub>) &minus; G(y<sub>j+1</sub>). This needs k evaluations of G, but it requires knowing the shape of f.</li>
+    <li><strong>Sampled preimage.</strong> We evaluate f on N grid points and count how many fall in each level. This only needs values of f, but the result depends on the grid.</li>
+  </ul>
+
+  <h3>Interactive comparison</h3>
+  <label for="fn">Function</label>
+  <select id="fn">
+    <option value="0">sin(x) on [0, &pi;]  (integral 2)</option>
+    <option value="1">x&sup2; on [0, 1]  (integral 1/3)</option>
+    <option value="2">1 if x &lt; 0.5, 3 if x &ge; 0.5  (integral 2)</option>
+    <option value="3">|x &minus; 0.5| on [0, 1]  (integral 1/4)</option>
+    <option value="4">1/&radic;x on (0, 1]  (integral 2)</option>
+    <option value="5">1 if x &lt; 0.5, 0 if x &ge; 0.5  (integral 1/2)</option>
+    <option value="6">sin(x)/x on [0, &pi;]  (integral Si(&pi;) = 1.85194)</option>
+  </select>
+  <label for="n1">Riemann: number of pieces (n)</label>
+  <input id="n1" type="number" min="1" max="100000" value="10">
+  <label for="k1">Lebesgue: number of levels (k)</label>
+  <input id="k1" type="number" min="1" max="100000" value="10">
+  <label for="N1">Sampled Lebesgue: grid points (N)</label>
+  <input id="N1" type="number" min="100" max="1000000" value="100000">
+  <div class="row"><button id="run1">Compute</button></div>
+  <p class="cap">Small values (n, k up to about 50) show the pictures clearly. The convergence chart always uses sizes from 10 to 10,000.</p>
+
+  <div class="two">
+    <div><h3>Riemann (domain split)</h3><canvas id="r1" role="img" aria-label="Midpoint rectangles under the function"></canvas></div>
+    <div><h3>Lebesgue (range split)</h3><canvas id="l1" role="img" aria-label="Simple function made of horizontal levels under the function"></canvas></div>
+  </div>
+  <p class="cap">Green: Riemann rectangles. Orange: the simple function built from the levels (always below f).</p>
+  <h3>Results</h3>
+  <pre class="report" id="rep1"></pre>
+  <h3>Convergence</h3>
+  <canvas id="cv1" role="img" aria-label="Error against n or k on a log-log scale"></canvas>
+  <p class="cap" id="capcv1"></p>
+</section>
+
+<section class="box">
+  <h2>Exercise 1. Results for all functions</h2>
+  <p>The table shows the absolute error of each method for n = k = 10, 100, 1,000 and 10,000, computed in Python (the exact integral is known for each function). The sampled Lebesgue method uses N = 100,000 points. The last column is the observed order of convergence, that is, the error is proportional to n<sup>&minus;order</sup>.</p>
+  <div class="wrap"><table><tr><th>Function</th><th>Method</th><th>n = k = 10</th><th>n = k = 100</th><th>n = k = 1,000</th><th>n = k = 10,000</th><th>Order</th></tr>
+<tr><td rowspan="3">sin(x), [0, &pi;]</td><td>Riemann</td><td>8.2e-3</td><td>8.2e-5</td><td>8.2e-7</td><td>8.2e-9</td><td>2</td></tr>
+<tr><td>Lebesgue, exact</td><td>1.7e-1</td><td>1.6e-2</td><td>1.6e-3</td><td>1.6e-4</td><td>1</td></tr>
+<tr><td>Lebesgue, sampled</td><td>1.7e-1</td><td>1.6e-2</td><td>1.6e-3</td><td>1.6e-4</td><td>&ndash;</td></tr>
+<tr><td rowspan="3">x&sup2;, [0, 1]</td><td>Riemann</td><td>8.3e-4</td><td>8.3e-6</td><td>8.3e-8</td><td>8.3e-10</td><td>2</td></tr>
+<tr><td>Lebesgue, exact</td><td>4.4e-2</td><td>4.8e-3</td><td>4.9e-4</td><td>5.0e-5</td><td>1</td></tr>
+<tr><td>Lebesgue, sampled</td><td>4.4e-2</td><td>4.8e-3</td><td>4.9e-4</td><td>5.0e-5</td><td>&ndash;</td></tr>
+<tr><td rowspan="3">step 1 / 3 at 0.5</td><td>Riemann</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>Lebesgue, exact</td><td>1.0e-1</td><td>1.0e-2</td><td>1.0e-3</td><td>1.0e-4</td><td>1</td></tr>
+<tr><td>Lebesgue, sampled</td><td>1.0e-1</td><td>1.0e-2</td><td>1.0e-3</td><td>1.0e-4</td><td>&ndash;</td></tr>
+<tr><td rowspan="3">|x &minus; 0.5|</td><td>Riemann</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>Lebesgue, exact</td><td>2.5e-2</td><td>2.5e-3</td><td>2.5e-4</td><td>2.5e-5</td><td>1</td></tr>
+<tr><td>Lebesgue, sampled</td><td>2.5e-2</td><td>2.5e-3</td><td>2.5e-4</td><td>2.5e-5</td><td>&ndash;</td></tr>
+<tr><td rowspan="3">1/&radic;x, (0, 1]</td><td>Riemann</td><td>1.9e-1</td><td>6.0e-2</td><td>1.9e-2</td><td>6.0e-3</td><td>0.5</td></tr>
+<tr><td>Lebesgue, exact</td><td>4.9e-1</td><td>1.5e-1</td><td>4.8e-2</td><td>1.5e-2</td><td>0.5</td></tr>
+<tr><td>Lebesgue, sampled</td><td>4.9e-1</td><td>1.5e-1</td><td>4.8e-2</td><td>1.5e-2</td><td>&ndash;</td></tr>
+<tr><td rowspan="3">step 1 / 0 at 0.5</td><td>Riemann</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>Lebesgue, exact</td><td>5.0e-2</td><td>5.0e-3</td><td>5.0e-4</td><td>5.0e-5</td><td>1</td></tr>
+<tr><td>Lebesgue, sampled</td><td>5.0e-2</td><td>5.0e-3</td><td>5.0e-4</td><td>5.0e-5</td><td>&ndash;</td></tr>
+<tr><td rowspan="3">sin(x)/x, [0, &pi;]</td><td>Riemann</td><td>1.3e-3</td><td>1.3e-5</td><td>1.3e-7</td><td>1.3e-9</td><td>2</td></tr>
+<tr><td>Lebesgue, exact</td><td>1.7e-1</td><td>1.6e-2</td><td>1.6e-3</td><td>1.6e-4</td><td>1</td></tr>
+<tr><td>Lebesgue, sampled</td><td>1.7e-1</td><td>1.6e-2</td><td>1.6e-3</td><td>1.6e-4</td><td>&ndash;</td></tr>
+</table></div>
+  <p class="cap">&ldquo;exact&rdquo; means that the error is zero up to rounding. Riemann uses even n here; the jump at 0.5 then falls exactly between two pieces. For odd n the step function has error 1/n: 0.0909, 0.0099, 0.00100, 0.00010 for n = 11, 101, 1001, 10001.</p>
+
+  <h3>Computational efficiency</h3>
+  <p>Time for sin(x) on [0, &pi;] with a large number of pieces (Python with numpy; for the sampled method N is the number of points and k = 1000).</p>
+  <div class="wrap"><table><tr><th>Size</th><th>Riemann: time, error</th><th>Lebesgue exact (k = size): time, error</th><th>Lebesgue sampled (N = size, k = 1000): time, error</th></tr>
+<tr><td>10,000</td><td>0.15 ms, 8.2e-9</td><td>0.14 ms, 1.6e-4</td><td>0.22 ms, 1.6e-3</td></tr>
+<tr><td>1,000,000</td><td>11.39 ms, 8.2e-13</td><td>15.74 ms, 1.6e-6</td><td>17.12 ms, 1.6e-3</td></tr>
+</table></div>
+</section>
+
+<section class="box">
+  <h2>Exercise 1. Pathological functions</h2>
+  <h3>Dirichlet function (1 on rationals, 0 on irrationals)</h3>
+  <p>In every piece of a partition there are both rational and irrational numbers. A Riemann sum therefore depends on the points chosen: with rational points (such as i/n) every height is 1 and the sum is 1, with irrational points (such as i/n + 1/(n&radic;2)) every height is 0 and the sum is 0. The upper Darboux sum is always 1 and the lower sum is always 0, so the function is <strong>not Riemann integrable</strong>. For the Lebesgue integral the rationals in [0, 1] form a countable set, which has length 0, so &int; f = 1 &middot; 0 + 0 &middot; 1 = <strong>0</strong>.</p>
+  <div class="wrap"><table><tr><th>n</th><th>Riemann sum, rational points</th><th>Riemann sum, irrational points</th><th>Lebesgue integral</th></tr>
+<tr><td>10</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>100</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>1,000</td><td>1</td><td>0</td><td>0</td></tr>
+</table></div>
+  <p class="cap">A computer cannot reproduce this experiment with floating-point numbers: every number it stores is rational, so a naive Riemann sum would always give 1. The values above were obtained by choosing the type of point by hand.</p>
+
+  <h3>Thomae function (1/q at p/q, 0 at irrationals)</h3>
+  <p>This function is continuous at every irrational number and discontinuous only at the rationals, which form a set of length 0. By Lebesgue's criterion it <strong>is Riemann integrable</strong>. Both integrals are 0: in the Lebesgue sense because the function is non-zero only on a countable set, and in the Riemann sense because for any &epsilon; only finitely many points have f &ge; &epsilon;. With rational points i/n (exact arithmetic) the Riemann sum is &Sigma; gcd(i, n)/n&sup2;. It tends to 0, but not smoothly: it is large when n has many divisors.</p>
+  <div class="wrap"><table><tr><th>n</th><th>Riemann sum, points i/n</th><th>Riemann sum, irrational points</th><th>Lebesgue integral</th></tr>
+<tr><td>10</td><td>0.27</td><td>0</td><td>0</td></tr>
+<tr><td>100</td><td>0.052</td><td>0</td><td>0</td></tr>
+<tr><td>720</td><td>0.0175</td><td>0</td><td>0</td></tr>
+<tr><td>997</td><td>0.00201</td><td>0</td><td>0</td></tr>
+<tr><td>1,000</td><td>0.0085</td><td>0</td><td>0</td></tr>
+</table><p class="cap">n = 997 is prime (small sum), n = 720 and n = 1000 have many divisors (larger sum).</p></div>
+</section>
+
+<section class="box">
+  <h2>Exercise 1. Discussion</h2>
+  <ul>
+    <li><strong>Same value.</strong> For all seven Riemann-integrable functions the two approaches converge to the same number, as the table shows. For 1/&radic;x the Riemann integral is only an improper one (a limit), while the Lebesgue integral exists directly, and both give 2.</li>
+    <li><strong>Accuracy and convergence.</strong> The midpoint Riemann sum converges with order 2 for smooth functions (error 8.2&times;10<sup>&minus;9</sup> for sin(x) at n = 10,000) and is exact for the piecewise linear and the step functions when the jump or corner is at a cell boundary. The Lebesgue lower sum has error at most h(b &minus; a), where h is the height of a level, so it converges with order 1 for every bounded function, smooth or not (1.6&times;10<sup>&minus;4</sup> for sin(x) at k = 10,000). It never needs smoothness, but it is slower. For 1/&radic;x both methods are slow, with order 1/2, because the function is unbounded.</li>
+    <li><strong>Efficiency.</strong> To reach an error of about 10<sup>&minus;6</sup> on sin(x), Riemann needs about 1000 pieces, while the exact-preimage Lebesgue sum needs about 10<sup>6</sup> levels (22 ms against a fraction of a millisecond). In addition, the Lebesgue method needs the length of the preimages. The exact version needs the shape of f (or a root search for each level), and the sampled version, which only needs values of f, depends on the grid and cannot go below the grid error.</li>
+    <li><strong>Where they behave differently.</strong> The Dirichlet function is not Riemann integrable but has Lebesgue integral 0. The Thomae function is integrable in both senses, but the Riemann sums converge irregularly. The step functions are easy for the Lebesgue approach, since only two values and two preimages are needed (the small error in the table comes only from the equally spaced levels, which do not contain the value 3 exactly). The strength of the Lebesgue integral is therefore theoretical (very general functions, limits), while for numerical work on ordinary functions the Riemann approach is simpler and much more efficient.</li>
+  </ul>
+</section>
+
+<!-- ===================== EXERCISE 2 ===================== -->
+<section class="box">
+  <h2>Exercise 2. Why the normal CDF is not elementary</h2>
+  <p>The standard normal CDF is</p>
+  <div class="eq">&Phi;(x) = (1/&radic;(2&pi;)) &int;<sub>&minus;&infin;</sub><sup>x</sup> e<sup>&minus;t&sup2;/2</sup> dt = 1/2 + (1/&radic;(2&pi;)) &int;<sub>0</sub><sup>x</sup> e<sup>&minus;t&sup2;/2</sup> dt.</div>
+  <p>The function e<sup>&minus;t&sup2;/2</sup> is continuous, so it has an antiderivative. The problem is that this antiderivative cannot be written with elementary functions (finite combinations of polynomials, exp, log, powers, trigonometric functions and their inverses). The result behind this is <strong>Liouville's theorem</strong>. In the form we need: let f and g be rational functions, with g not constant. Then &int; f e<sup>g</sup> dx is elementary if and only if there is a rational function R with</p>
+  <div class="eq">R&prime;(x) + R(x) g&prime;(x) = f(x).</div>
+  <p>Here f = 1 and g = &minus;x&sup2;/2, so the condition becomes <strong>R&prime; &minus; xR = 1</strong>. No rational R can satisfy it:</p>
+  <ul>
+    <li>If R is a polynomial of degree d &ge; 0, then xR has degree d + 1 and R&prime; has degree smaller than d, so R&prime; &minus; xR has degree d + 1 &ge; 1 and cannot be the constant 1. R = 0 gives 0, not 1.</li>
+    <li>If R has a pole of order m &ge; 1 at a point a, then R&prime; has a pole of order m + 1 there, while xR has a pole of order at most m. So R&prime; &minus; xR still has a pole at a and cannot be equal to 1.</li>
+  </ul>
+  <p>Hence the integral of e<sup>&minus;x&sup2;/2</sup> is not elementary. This does not mean that &Phi; does not exist: it is a smooth, well-defined function, but it is a new function that must be defined by the integral itself.</p>
+
+  <h3>The error function</h3>
+  <p>The new function is given a name, the error function erf(x) = (2/&radic;&pi;) &int;<sub>0</sub><sup>x</sup> e<sup>&minus;t&sup2;</sup> dt. With the substitution t = s/&radic;2 we get the exact representation</p>
+  <div class="eq">&Phi;(x) = 1/2 &middot; (1 + erf(x/&radic;2)) = 1/2 &middot; erfc(&minus;x/&radic;2),&nbsp;&nbsp; erfc = 1 &minus; erf.</div>
+  <p>This is an exact analytic formula, but it only moves the problem: erf is defined by an integral, so to get a number we still need a numerical method. In practice the libraries combine several of them. For this reason I compared the following methods.</p>
+</section>
+
+<section class="box">
+  <h2>Exercise 2. Methods and implementation</h2>
+  <ol>
+    <li><strong>Trapezoidal rule and Simpson's rule</strong> for &Phi;(x) = 1/2 + &int;<sub>0</sub><sup>x</sup> &phi;(t) dt with n panels, where &phi; is the normal density. Simple, but the number of panels must grow with |x|.</li>
+    <li><strong>Alternating power series.</strong> Expanding the exponential gives &Phi;(x) = 1/2 + (1/&radic;(2&pi;)) &Sigma;<sub>k</sub> (&minus;1)<sup>k</sup> x<sup>2k+1</sup> / (2<sup>k</sup> k! (2k+1)). It converges for every x, but the terms have alternating signs and become very large before they shrink, so for large |x| almost all digits are lost by cancellation.</li>
+    <li><strong>Series with positive terms.</strong> Let h(x) = e<sup>x&sup2;/2</sup> &int;<sub>0</sub><sup>x</sup> e<sup>&minus;t&sup2;/2</sup> dt. Then h&prime; = xh + 1 (note that this is the same equation as R&prime; &minus; xR = 1 above, now with the solution h). Writing h = &Sigma; a<sub>k</sub> x<sup>2k+1</sup> gives a<sub>0</sub> = 1 and a<sub>k</sub> = a<sub>k&minus;1</sub>/(2k + 1), so
+      <div class="eq">&Phi;(x) = 1/2 + &phi;(x) (x + x&sup3;/3 + x<sup>5</sup>/(3&middot;5) + x<sup>7</sup>/(3&middot;5&middot;7) + &hellip;).</div>
+      All terms are positive for x &gt; 0, so there is no cancellation. For x &lt; 0 and large |x| the result is still bad, because &Phi; is tiny and is computed as 1/2 minus a number close to 1/2.</li>
+    <li><strong>Continued fraction for the tails.</strong> For x &gt; 0 the upper tail is Q(x) = 1 &minus; &Phi;(x) = &phi;(x) / (x + 1/(x + 2/(x + 3/(x + &hellip;)))), which converges quickly for x &ge; 2.5, with no subtraction. By symmetry &Phi;(&minus;x) = Q(x).</li>
+    <li><strong>Hybrid method (the one I propose).</strong> The positive series for |x| &le; 2.5 and the continued fraction for |x| &gt; 2.5. It uses only multiplications and divisions.</li>
+    <li><strong>Through erf.</strong> &Phi;(x) = erfc(&minus;x/&radic;2)/2 with the C library function, as a comparison.</li>
+  </ol>
+<pre class="code">def pdf(t):  return math.exp(-t * t / 2) / math.sqrt(2 * math.pi)
+
+def simpson(x, n=100):                        # n even
+    h = x / n
+    s = pdf(0) + pdf(x) + sum((4 if i % 2 else 2) * pdf(i * h) for i in range(1, n))
+    return 0.5 + s * h / 3
+
+def series_pos(x):                            # 1/2 + pdf(x) * (x + x^3/3 + x^5/15 + ...)
+    s = term = x; k = 0
+    while abs(term) > 1e-17 * abs(s):
+        k += 1; term *= x * x / (2 * k + 1); s += term
+    return 0.5 + pdf(x) * s
+
+def tail_cf(x, depth=60):                     # Q(x) for x > 0
+    f = x
+    for k in range(depth, 0, -1): f = x + k / f
+    return pdf(x) / f
+
+def phi(x):                                   # hybrid
+    if abs(x) <= 2.5: return series_pos(x)
+    q = tail_cf(abs(x), 60 if abs(x) > 4 else 120)
+    return 1 - q if x > 0 else q</pre>
+</section>
+
+<section class="box">
+  <h2>Exercise 2. Accuracy compared with a reference</h2>
+  <p><strong>Reference.</strong> I used the arbitrary-precision library mpmath with 50 digits (<em>ncdf</em>), and I checked it against the table values in the notes of the linked section of Hogg, McKean and Craig: &Phi;(1) &asymp; 0.8413, &Phi;(2) &asymp; 0.9772 and &Phi;(3) &asymp; 0.9987. The reference values below round to these numbers.</p>
+  <p>The table gives the <strong>relative error</strong> of each method (Trapezoid with n = 1000 panels, Simpson with n = 100, the alternating series with 60 terms).</p>
+  <div class="wrap"><table><tr><th>x</th><th>&Phi;(x), reference</th><th>Trapezoid</th><th>Simpson</th><th>Alt. series</th><th>Pos. series</th><th>Hybrid</th><th>erfc (library)</th></tr>
+<tr><td>&minus;8</td><td>6.2209605742717841e-16</td><td>1.1e-1</td><td>1.8e-2</td><td>6.8e21</td><td>1.6e-1</td><td>exact</td><td>exact</td></tr>
+<tr><td>&minus;5</td><td>2.8665157187919391e-7</td><td>5.4e-5</td><td>2.0e-5</td><td>1.1e-6</td><td>6.2e-10</td><td>exact</td><td>exact</td></tr>
+<tr><td>&minus;3</td><td>0.0013498980316300945</td><td>7.4e-6</td><td>2.7e-7</td><td>1.2e-13</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>&minus;1.5</td><td>0.066807201268858066</td><td>5.5e-7</td><td>6.1e-10</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>&minus;0.5</td><td>0.3085375387259869</td><td>1.2e-8</td><td>5.4e-12</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>0</td><td>0.5</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>0.5</td><td>0.6914624612740131</td><td>5.3e-9</td><td>2.4e-12</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>1</td><td>0.84134474606854295</td><td>2.4e-8</td><td>3.2e-11</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>1.96</td><td>0.97500210485177956</td><td>3.8e-8</td><td>8.1e-11</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>2</td><td>0.97724986805182079</td><td>3.7e-8</td><td>9.8e-11</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>3</td><td>0.99865010196836991</td><td>1.0e-8</td><td>3.6e-10</td><td>exact</td><td>exact</td><td>exact</td><td>exact</td></tr>
+<tr><td>5</td><td>0.99999971334842812</td><td>1.5e-11</td><td>5.6e-12</td><td>3.1e-13</td><td>exact</td><td>exact</td><td>exact</td></tr>
+</table><p class="cap">Relative errors. &ldquo;exact&rdquo; means no difference in double precision. The trapezoidal and Simpson columns are for x = 0 trivially exact.</p></div>
+  <h3>Try it</h3>
+  <label for="x2">Point x (from &minus;10 to 10)</label>
+  <input id="x2" type="number" min="-10" max="10" step="0.1" value="1.96">
+  <label for="n2">Panels for Trapezoid and Simpson (n)</label>
+  <input id="n2" type="number" min="2" max="100000" value="100">
+  <label for="t2">Terms of the alternating series</label>
+  <input id="t2" type="number" min="1" max="200" value="30">
+  <div class="row"><button id="run2">Compute</button></div>
+  <p class="cap">The accurate value used for the errors is the hybrid method, which agrees with the 50-digit reference to about 10<sup>&minus;16</sup> in the table above. For |x| &le; 2.5 the hybrid method and the positive series are the same computation, so that error is 0.</p>
+  <pre class="report" id="rep2"></pre>
+  <div class="two">
+    <div><h3>Trapezoid and Simpson</h3><canvas id="cv2a" role="img" aria-label="Error of trapezoid and Simpson against the number of panels"></canvas><p class="cap">Error against n at the chosen x.</p></div>
+    <div><h3>Series</h3><canvas id="cv2b" role="img" aria-label="Error of the two series against the number of terms"></canvas><p class="cap">Error against the number of terms at the chosen x.</p></div>
+  </div>
+
+  <h3>Efficiency</h3>
+  <p>Time per evaluation (Python, 401 points in [&minus;8, 8]) and the worst relative error over the same points.</p>
+  <div class="wrap"><table><tr><th>Method</th><th>Time per value</th><th>Worst relative error in [&minus;8, 8]</th></tr>
+<tr><td>Trapezoid, n = 1000</td><td>152.45 &micro;s</td><td>1.1e-01</td></tr>
+<tr><td>Simpson, n = 100</td><td>19.49 &micro;s</td><td>6.5e-02</td></tr>
+<tr><td>Alternating series, 60 terms</td><td>8.36 &micro;s</td><td>6.8e+21</td></tr>
+<tr><td>Positive series</td><td>7.78 &micro;s</td><td>3.9e-01</td></tr>
+<tr><td>Hybrid (series + continued fraction)</td><td>2.44 &micro;s</td><td>2.4e-14</td></tr>
+<tr><td>erfc from the C library</td><td>0.13 &micro;s</td><td>8.9e-15</td></tr>
+</table></div>
+</section>
+
+<section class="box">
+  <h2>Exercise 2. Conclusions</h2>
+  <ul>
+    <li><strong>Numerical integration.</strong> The trapezoidal error is divided by 4 when n is doubled (order 2) and the Simpson error by 16 (order 4). At x = 1 with n = 256 the errors are 3.1&times;10<sup>&minus;7</sup> and 6.3&times;10<sup>&minus;13</sup>. Simpson is much better, but both need more panels as |x| grows, and in the tails the relative error is large, because &Phi;(x) is computed as 1/2 minus an integral. At x = &minus;8 the relative error is still 1.8% for Simpson with n = 100.</li>
+    <li><strong>Series.</strong> The alternating series is accurate for x up to 3 (relative error about 10<sup>&minus;16</sup>, and 10<sup>&minus;13</sup> at x = &minus;3) but needs more terms as |x| grows (11 terms for 10<sup>&minus;12</sup> at x = 1, 27 at x = 3, 51 at x = 5). At x = 8 it never gets better than about 4&times;10<sup>&minus;6</sup> because of cancellation, and at x = &minus;8 it is completely wrong (relative error 10<sup>21</sup>). The positive series fixes the cancellation but not the problem for negative x.</li>
+    <li><strong>Hybrid method.</strong> It gives about 14 correct digits everywhere in [&minus;8, 8] (worst relative error 2.4&times;10<sup>&minus;14</sup>, near the switch at |x| = 2.5), costs about 2.5 &mu;s per value in Python, and is roughly 10 times faster than Simpson and 50 or more times faster than the trapezoidal rule, while being far more accurate.</li>
+    <li><strong>erf from the library.</strong> It is the fastest (about 0.13 &mu;s, written in C) and accurate to about 10<sup>&minus;14</sup> relative error. This is the method to use in practice, but it is itself built from series, continued fractions and rational approximations like the ones above.</li>
+    <li><strong>Why numerical methods are still needed.</strong> Liouville's theorem shows that no closed formula in elementary functions exists. The error function gives an exact definition of &Phi;, but a value such as &Phi;(1.96) = 0.97500210485&hellip; can only be obtained by a numerical algorithm, and the choice of the algorithm (series near 0, continued fraction in the tails, relative error of the tails) decides how many digits are correct.</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const FONT = '10px "Poppins", "Segoe UI", sans-serif';
+
+/* ---------- helpers ---------- */
+function clamp(v, a, b, def) {
+  v = Math.round(Number(v));
+  if (!isFinite(v)) v = def;
+  return Math.min(b, Math.max(a, v));
+}
+function fmt(v) {
+  const a = Math.abs(v);
+  if (a === 0) return '0';
+  if (a >= 1000) return String(Math.round(v));
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  return v.toFixed(2).replace(/\.?0+$/, '');
+}
+const sci = v => v === 0 ? '0' : (Math.abs(v) < 1e-3 || Math.abs(v) >= 1e4 ? v.toExponential(2) : Number(v.toPrecision(4)).toString());
+function niceStep(range) {
+  const raw = range / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 5, 10].map(f => f * mag).find(s => s >= raw);
+}
+function frame(canvas, h) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.height = h + 'px';
+  const w = canvas.clientWidth;
+  canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#f2fbf6'; ctx.fillRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+function axes(g, x0, x1, y0, y1, xticks) {
+  const { ctx, w, h } = g, L = 40, R = 10, T = 10, B = 24;
+  const X = v => L + (v - x0) / (x1 - x0) * (w - L - R);
+  const Y = v => h - B - (v - y0) / (y1 - y0) * (h - T - B);
+  ctx.font = FONT; ctx.fillStyle = '#4d6b60'; ctx.strokeStyle = '#d4ece0'; ctx.lineWidth = 1;
+  const stepY = niceStep(y1 - y0);
+  for (let v = Math.ceil(y0 / stepY - 1e-9) * stepY; v <= y1 + 1e-9; v += stepY) {
+    const y = Y(v);
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(fmt(Math.abs(v) < stepY * 1e-6 ? 0 : v), L - 5, y + 3);
+  }
+  ctx.textAlign = 'center';
+  for (const v of xticks) ctx.fillText(fmt(v), X(v), h - B + 14);
+  ctx.strokeStyle = '#0b3d2e';
+  ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, h - B); ctx.lineTo(w - R, h - B); ctx.stroke();
+  return { X, Y, L, R, T, B, w, h };
+}
+function clipPlot(A, ctx) { ctx.save(); ctx.beginPath(); ctx.rect(A.L, A.T, A.w - A.L - A.R, A.h - A.T - A.B); ctx.clip(); }
+
+/* general log-log chart (also used for the semi-log chart of exercise 2) */
+function logChart(canvas, xs, series, note, linearX, legendTop) {
+  const g = frame(canvas, 270), ctx = g.ctx, { w, h } = g, L = 50, R = 12, T = 12, B = 28;
+  const FLOOR = 1e-17;
+  const all = [];
+  series.forEach(s => s.ys.forEach(v => all.push(Math.max(v, FLOOR))));
+  const ly0 = Math.floor(Math.log10(Math.min(...all)) - 0.05), ly1 = Math.ceil(Math.log10(Math.max(...all)) + 0.05);
+  const lx0 = linearX ? 0 : Math.log10(xs[0]) - 0.05, lx1 = linearX ? xs[xs.length - 1] : Math.log10(xs[xs.length - 1]) + 0.05;
+  const X = v => L + ((linearX ? v : Math.log10(v)) - lx0) / (lx1 - lx0) * (w - L - R);
+  const Y = v => h - B - (Math.log10(Math.max(v, FLOOR)) - ly0) / (ly1 - ly0) * (h - T - B);
+  ctx.font = FONT; ctx.fillStyle = '#4d6b60'; ctx.strokeStyle = '#d4ece0'; ctx.lineWidth = 1;
+  const every = Math.ceil((ly1 - ly0) / 7);
+  for (let e = ly0; e <= ly1; e += every) {
+    const y = Y(Math.pow(10, e));
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText('1e' + e, L - 5, y + 3);
+  }
+  ctx.textAlign = 'center';
+  if (linearX) { for (let v = 0; v <= lx1; v += 20) ctx.fillText(String(v), X(v), h - B + 14); }
+  else for (let e = Math.ceil(lx0); e <= Math.floor(lx1); e++) ctx.fillText('1e' + e, X(Math.pow(10, e)), h - B + 14);
+  ctx.strokeStyle = '#0b3d2e';
+  ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, h - B); ctx.lineTo(w - R, h - B); ctx.stroke();
+  clipPlot({ L, R, T, B, w, h }, ctx);
+  series.forEach(s => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 1.8; ctx.beginPath();
+    s.ys.forEach((v, i) => i ? ctx.lineTo(X(xs[i]), Y(v)) : ctx.moveTo(X(xs[i]), Y(v)));
+    ctx.stroke();
+    ctx.fillStyle = s.color;
+    if (xs.length <= 14) s.ys.forEach((v, i) => { ctx.beginPath(); ctx.arc(X(xs[i]), Y(v), 3, 0, 7); ctx.fill(); });
+  });
+  ctx.restore();
+  ctx.font = FONT; ctx.textAlign = 'left';
+  series.forEach((s, i) => { ctx.fillStyle = s.color; if (legendTop) { ctx.textAlign = 'right'; ctx.fillText('● ' + s.name, w - R - 6, T + 24 + 13 * i); ctx.textAlign = 'left'; } else ctx.fillText('● ' + s.name, L + 8, h - B - 8 - 13 * (series.length - 1 - i)); });
+  if (note) { ctx.fillStyle = '#4d6b60'; ctx.textAlign = 'right'; ctx.fillText(note, w - R - 4, T + 10); }
+}
+
+/* =================== EXERCISE 1 =================== */
+function bisectSinc(y) {
+  if (y <= 0) return Math.PI;
+  if (y >= 1) return 0;
+  let lo = 0, hi = Math.PI;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2, v = mid === 0 ? 1 : Math.sin(mid) / mid;
+    if (v >= y) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+const PI = Math.PI;
+const FN = [
+  { f: x => Math.sin(x), a: 0, b: PI, G: y => y <= 0 ? PI : y >= 1 ? 0 : PI - 2 * Math.asin(y), lo: 0, hi: 1, ex: 2, ymax: 1.15 },
+  { f: x => x * x, a: 0, b: 1, G: y => y <= 0 ? 1 : y >= 1 ? 0 : 1 - Math.sqrt(y), lo: 0, hi: 1, ex: 1 / 3, ymax: 1.15 },
+  { f: x => x < 0.5 ? 1 : 3, a: 0, b: 1, G: y => y <= 1 ? 1 : y <= 3 ? 0.5 : 0, lo: 1, hi: 3, ex: 2, ymax: 3.4 },
+  { f: x => Math.abs(x - 0.5), a: 0, b: 1, G: y => y <= 0 ? 1 : y > 0.5 ? 0 : 1 - 2 * y, lo: 0, hi: 0.5, ex: 0.25, ymax: 0.6 },
+  { f: x => 1 / Math.sqrt(x), a: 0, b: 1, G: y => y <= 1 ? 1 : 1 / (y * y), lo: 0, hi: null, ex: 2, ymax: 6 },
+  { f: x => x < 0.5 ? 1 : 0, a: 0, b: 1, G: y => y <= 0 ? 1 : y <= 1 ? 0.5 : 0, lo: 0, hi: 1, ex: 0.5, ymax: 1.15 },
+  { f: x => x === 0 ? 1 : Math.sin(x) / x, a: 0, b: PI, G: bisectSinc, lo: 0, hi: 1, ex: 1.8519370519824662, ymax: 1.15 }
+];
+
+function riemann(F, n) {
+  const w = (F.b - F.a) / n; let s = 0;
+  for (let i = 0; i < n; i++) s += F.f(F.a + (i + 0.5) * w);
+  return s * w;
+}
+function levelsOf(F, k) {
+  const top = F.hi === null ? Math.sqrt(k) : F.hi, h = (top - F.lo) / k;
+  return { h, y: j => F.lo + j * h };
+}
+function lebExact(F, k) {
+  const { y } = levelsOf(F, k), g = new Float64Array(k);
+  for (let j = 0; j < k; j++) g[j] = F.G(y(j));
+  let s = 0;
+  for (let j = 0; j < k; j++) s += y(j) * (j < k - 1 ? g[j] - g[j + 1] : g[j]);
+  return s;
+}
+function samplePoints(F, N) {
+  const v = new Float64Array(N), w = (F.b - F.a) / N;
+  for (let i = 0; i < N; i++) v[i] = F.f(F.a + (i + 0.5) * w);
+  return v;
+}
+function lebSampled(F, k, v) {
+  const { h, y } = levelsOf(F, k), cnt = new Int32Array(k), N = v.length;
+  for (let i = 0; i < N; i++) {
+    let j = Math.floor((v[i] - F.lo) / h);
+    cnt[j < 0 ? 0 : j > k - 1 ? k - 1 : j]++;
+  }
+  let s = 0;
+  for (let j = 0; j < k; j++) s += y(j) * cnt[j];
+  return s * (F.b - F.a) / N;
+}
+
+function drawRiemann(F, n) {
+  const g = frame($('r1'), 230), ctx = g.ctx;
+  const A = axes(g, F.a, F.b, 0, F.ymax, [F.a, (F.a + F.b) / 2, F.b]);
+  clipPlot(A, ctx);
+  if (n <= 200) {
+    const w = (F.b - F.a) / n;
+    ctx.fillStyle = 'rgba(34,176,125,0.35)'; ctx.strokeStyle = '#12805c'; ctx.lineWidth = 1;
+    for (let i = 0; i < n; i++) {
+      const x0 = F.a + i * w, v = Math.min(F.f(x0 + w / 2), F.ymax * 2);
+      ctx.fillRect(A.X(x0), A.Y(v), A.X(x0 + w) - A.X(x0), A.Y(0) - A.Y(v));
+      ctx.strokeRect(A.X(x0), A.Y(v), A.X(x0 + w) - A.X(x0), A.Y(0) - A.Y(v));
+    }
+  }
+  curve(ctx, A, F);
+  ctx.restore();
+  ctx.fillStyle = '#0b3d2e'; ctx.font = FONT; ctx.textAlign = 'left';
+  ctx.fillText(n <= 200 ? 'n = ' + n + ' rectangles' : 'n = ' + n + ' (too many to draw)', A.L + 6, A.T + 10);
+}
+function curve(ctx, A, F) {
+  ctx.strokeStyle = '#0b3d2e'; ctx.lineWidth = 1.8; ctx.beginPath();
+  const M = 600; let started = false;
+  for (let i = 0; i <= M; i++) {
+    const x = F.a + (F.b - F.a) * Math.max(i / M, 1e-9), v = F.f(x);
+    const px = A.X(x), py = A.Y(v);
+    started ? ctx.lineTo(px, py) : ctx.moveTo(px, py); started = true;
+  }
+  ctx.stroke();
+}
+function drawLebesgue(F, k) {
+  const g = frame($('l1'), 230), ctx = g.ctx;
+  const A = axes(g, F.a, F.b, 0, F.ymax, [F.a, (F.a + F.b) / 2, F.b]);
+  const { h, y } = levelsOf(F, k);
+  clipPlot(A, ctx);
+  ctx.fillStyle = 'rgba(240,138,36,0.35)';
+  const M = 400;
+  for (let i = 0; i < M; i++) {
+    const x0 = F.a + (F.b - F.a) * i / M, x1 = F.a + (F.b - F.a) * (i + 1) / M;
+    let j = Math.floor((F.f(Math.max((x0 + x1) / 2, 1e-12)) - F.lo) / h);
+    j = Math.max(0, Math.min(k - 1, j));
+    const v = Math.min(y(j), F.ymax * 2);
+    ctx.fillRect(A.X(x0), A.Y(v), A.X(x1) - A.X(x0) + 0.6, A.Y(0) - A.Y(v));
+  }
+  if (k <= 40) {
+    ctx.strokeStyle = 'rgba(232,89,12,0.6)'; ctx.lineWidth = 0.8; ctx.setLineDash([3, 3]);
+    for (let j = 0; j <= k; j++) { const v = y(j); if (F.hi === null && j === k) break; ctx.beginPath(); ctx.moveTo(A.L, A.Y(v)); ctx.lineTo(A.w - A.R, A.Y(v)); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  curve(ctx, A, F);
+  ctx.restore();
+  ctx.fillStyle = '#0b3d2e'; ctx.font = FONT; ctx.textAlign = 'left';
+  ctx.fillText('k = ' + k + ' levels', A.L + 6, A.T + 10);
+}
+
+let cur1 = null;
+function run1() {
+  const F = FN[clamp($('fn').value, 0, 6, 0)];
+  const n = clamp($('n1').value, 1, 100000, 10), k = clamp($('k1').value, 1, 100000, 10), N = clamp($('N1').value, 100, 1000000, 100000);
+  $('n1').value = n; $('k1').value = k; $('N1').value = N;
+  cur1 = { F, n, k, N };
+  drawRiemann(F, n); drawLebesgue(F, k);
+  const t0 = performance.now();
+  const R = riemann(F, n), L = lebExact(F, k), v = samplePoints(F, N), S = lebSampled(F, k, v);
+  const ms = Math.round(performance.now() - t0);
+  const row = (name, val, cost) => name.padEnd(28) + val.toPrecision(10).padEnd(14) + ('error ' + sci(val - F.ex)).padEnd(22) + cost;
+  $('rep1').textContent = [
+    'Exact integral:             ' + F.ex.toPrecision(10),
+    '',
+    row('Riemann (midpoint)', R, n + ' evaluations of f'),
+    row('Lebesgue (exact preimage)', L, k + ' evaluations of G'),
+    row('Lebesgue (sampled)', S, N + ' evaluations of f'),
+    '',
+    'Errors are approximation minus exact value. The Lebesgue (exact) sum is a',
+    'lower bound, so its error is never positive. Total time: ' + ms + ' ms.'
+  ].join('\n');
+  // convergence
+  const sizes = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000], eR = [], eL = [], eS = [];
+  sizes.forEach(m => { eR.push(Math.abs(riemann(F, m) - F.ex)); eL.push(Math.abs(lebExact(F, m) - F.ex)); eS.push(Math.abs(lebSampled(F, m, v) - F.ex)); });
+  logChart($('cv1'), sizes, [
+    { name: 'Riemann (midpoint), n pieces', color: '#12805c', ys: eR },
+    { name: 'Lebesgue (exact preimage), k levels', color: '#e8590c', ys: eL },
+    { name: 'Lebesgue (sampled, N = ' + N + '), k levels', color: '#8a6d00', ys: eS }
+  ], 'error 0 is drawn at the bottom');
+  $('capcv1').textContent = 'Absolute error against n (or k) on logarithmic axes. A straight line with slope −2 means order 2, slope −1 means order 1.';
+}
+
+/* =================== EXERCISE 2 =================== */
+const SQ2PI = Math.sqrt(2 * Math.PI);
+const pdf = t => Math.exp(-t * t / 2) / SQ2PI;
+function trap(x, n) {
+  const h = x / n; let s = 0.5 * (pdf(0) + pdf(x));
+  for (let i = 1; i < n; i++) s += pdf(i * h);
+  return 0.5 + s * h;
+}
+function simp(x, n) {
+  if (n % 2) n++;
+  const h = x / n; let s = pdf(0) + pdf(x);
+  for (let i = 1; i < n; i++) s += (i % 2 ? 4 : 2) * pdf(i * h);
+  return 0.5 + s * h / 3;
+}
+function seriesAlt(x, terms) {
+  let s = 0, term = x;
+  for (let k = 0; k < terms; k++) { s += term / (2 * k + 1); term *= -x * x / (2 * (k + 1)); }
+  return 0.5 + s / SQ2PI;
+}
+function seriesPosTerms(x, terms) {
+  let s = x, term = x;
+  for (let k = 1; k < terms; k++) { term *= x * x / (2 * k + 1); s += term; }
+  return 0.5 + pdf(x) * s;
+}
+function seriesPos(x) {
+  let s = x, term = x, k = 0;
+  while (Math.abs(term) > 1e-17 * Math.abs(s) && k < 400) { k++; term *= x * x / (2 * k + 1); s += term; }
+  return 0.5 + pdf(x) * s;
+}
+function tailCF(x, depth) {
+  let f = x;
+  for (let k = depth; k > 0; k--) f = x + k / f;
+  return pdf(x) / f;
+}
+function phi(x) {
+  if (Math.abs(x) <= 2.5) return seriesPos(x);
+  const q = tailCF(Math.abs(x), Math.abs(x) > 4 ? 60 : 120);
+  return x > 0 ? 1 - q : q;
+}
+
+function run2() {
+  let x = Number($('x2').value); if (!isFinite(x)) x = 1.96;
+  x = Math.max(-10, Math.min(10, x)); $('x2').value = x;
+  const n = clamp($('n2').value, 2, 100000, 100), t = clamp($('t2').value, 1, 200, 30);
+  $('n2').value = n; $('t2').value = t;
+  const ref = phi(x);
+  const rows = [
+    ['Trapezoid, n = ' + n, x === 0 ? 0.5 : trap(x, n)],
+    ['Simpson, n = ' + (n % 2 ? n + 1 : n), x === 0 ? 0.5 : simp(x, n)],
+    ['Alternating series, ' + t + ' terms', seriesAlt(x, t)],
+    ['Positive series (until converged)', seriesPos(x)],
+    ['Hybrid method', ref]
+  ];
+  const lines = ['x = ' + x, ''];
+  lines.push('Method'.padEnd(36) + 'Value'.padEnd(22) + 'Absolute error');
+  rows.forEach(r => lines.push(r[0].padEnd(36) + r[1].toPrecision(16).padEnd(22) + sci(Math.abs(r[1] - ref))));
+  lines.push('', 'Errors are measured against the hybrid value (about 1e-16 from the 50-digit reference).');
+  $('rep2').textContent = lines.join('\n');
+
+  const ns = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024];
+  logChart($('cv2a'), ns, [
+    { name: 'Trapezoid', color: '#12805c', ys: ns.map(m => Math.abs(trap(x || 1e-9, m) - ref)) },
+    { name: 'Simpson', color: '#e8590c', ys: ns.map(m => Math.abs(simp(x || 1e-9, m) - ref)) }
+  ], 'n panels');
+  const ts = Array.from({ length: 80 }, (_, i) => i + 1);
+  logChart($('cv2b'), ts, [
+    { name: 'Alternating series', color: '#12805c', ys: ts.map(m => Math.abs(seriesAlt(x, m) - ref)) },
+    { name: 'Positive series', color: '#e8590c', ys: ts.map(m => Math.abs(seriesPosTerms(x, m) - ref)) }
+  ], 'number of terms', true, true);
+}
+
+$('run1').addEventListener('click', run1);
+$('fn').addEventListener('change', run1);
+$('run2').addEventListener('click', run2);
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { run1(); run2(); }, 150); });
+run1(); run2();
+</script>
+</body>
+</html>
